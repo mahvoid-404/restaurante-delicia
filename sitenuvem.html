@@ -1,0 +1,641 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurante Delícia - Comida Caseira com Amor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            line-height: 1.6; 
+            color: #333;
+        }
+
+        /* HEADER */
+        .header-fixed { 
+            position: fixed; top: 0; width: 100%; 
+            background: rgba(255,99,71,0.95); 
+            z-index: 1000; 
+        }
+        .navbar { 
+            display: flex; justify-content: space-between; 
+            align-items: center; padding: 1rem 5%; 
+        }
+        .logo { 
+            color: white; font-size: 1.5rem; font-weight: 700; 
+        }
+        .nav-menu { 
+            display: flex; list-style: none; gap: 2rem; 
+        }
+        .nav-menu a { 
+            color: white; text-decoration: none; font-weight: 500; 
+        }
+        .hamburger { 
+            display: none; font-size: 1.5rem; color: white; cursor: pointer; 
+        }
+        .nav-menu.active {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background: rgba(255,99,71,0.95);
+            padding: 1rem;
+        }
+
+        /* HERO */
+        .hero { 
+            height: 100vh; 
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                        url('https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?w=1920') center/cover;
+            display: flex; align-items: center; justify-content: center; 
+            text-align: center; color: white;
+        }
+        .hero-content h1 { font-size: 3rem; margin-bottom: 1rem; }
+        .hero-buttons { gap: 1rem; margin-top: 2rem; display: flex; justify-content: center; flex-wrap: wrap; }
+        .btn-primary, .btn-secondary { 
+            padding: 12px 30px; border: none; border-radius: 30px; 
+            font-size: 1.1rem; text-decoration: none; cursor: pointer; 
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #ff6347; color: white; }
+        .btn-secondary { background: transparent; color: white; border: 2px solid white; }
+
+        /* SEÇÕES GERAIS */
+        section { padding: 80px 5%; text-align: center; }
+        h2 { font-size: 2.5rem; margin-bottom: 2rem; color: #ff6347; }
+
+        /* CARDÁPIO */
+        .filter-buttons { margin: 2rem 0; }
+        .filter-btn { 
+            padding: 10px 20px; margin: 0 5px; border: none; 
+            background: #f8f9fa; border-radius: 20px; cursor: pointer; 
+            transition: 0.3s;
+        }
+        .filter-btn.active { background: #ff6347; color: white; }
+        .cardapio-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 2rem; 
+        }
+        .card-item { 
+            background: white; border-radius: 15px; overflow: hidden; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .card-item:hover { transform: translateY(-10px); }
+        .card-item img { width: 100%; height: 200px; object-fit: cover; }
+        .card-item h3 { margin: 1rem 0; color: #ff6347; }
+        .card-item p { padding: 0 1rem 1rem; }
+        .preco { 
+            font-size: 1.5rem; font-weight: 700; color: #ff6347; 
+            display: block; padding: 0 1rem 1rem;
+        }
+
+        /* SOBRE */
+        .sobre-content { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; 
+            align-items: center; 
+        }
+        .sobre-img { border-radius: 15px; width: 100%; }
+
+        /* GALERIA */
+        .gallery-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 1rem; 
+        }
+        .gallery-grid img { 
+            width: 100%; height: 250px; object-fit: cover; border-radius: 10px; 
+        }
+
+        /* RESERVAS */
+        .form-reserva { 
+            max-width: 500px; margin: 0 auto; display: grid; gap: 1rem; 
+        }
+        .form-reserva input, .form-reserva select { 
+            padding: 15px; border: 2px solid #f0f0f0; border-radius: 10px; 
+            font-size: 1rem; 
+        }
+
+        /* MESAS */
+        .mesas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .mesa-item {
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .mesa-item.livre { background: #28a745; color: white; }
+        .mesa-item.ocupada { background: #ff6347; color: white; }
+        .mesa-item:hover { transform: scale(1.05); }
+
+        /* PEDIDOS */
+        .pedidos-form, .cozinha-grid, .conta-grid {
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+        .pedido-item, .conta-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .status-btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #ff6347;
+            color: white;
+        }
+
+        /* CONTATO */
+        .contato-content { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; 
+        }
+        .mapa { height: 300px; border-radius: 15px; }
+        .contato-info h3 { 
+            color: #ff6347; margin: 1rem 0 0.5rem; 
+        }
+        .social a { color: #ff6347; }
+
+        /* FOOTER */
+        .footer { 
+            background: #333; color: white; padding: 2rem; text-align: center; 
+        }
+
+        /* RESPONSIVO */
+        @media (max-width: 768px) {
+            .hamburger { display: block; }
+            .nav-menu { display: none; }
+            .hero-content h1 { font-size: 2rem; }
+            .sobre-content, .contato-content { grid-template-columns: 1fr; }
+            .hero-buttons { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER FIXO -->
+    <header class="header-fixed">
+        <nav class="navbar">
+            <h1 class="logo">🍽️ Restaurante Delícia</h1>
+            <ul class="nav-menu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#cardapio">Cardápio</a></li>
+                <li><a href="#sobre">Sobre</a></li>
+                <li><a href="#galeria">Galeria</a></li>
+                <li><a href="#reservas">Reservar</a></li>
+                <li><a href="#mesas">Mesas</a></li>
+                <li><a href="#cozinha">Cozinha</a></li>
+                <li><a href="#conta">Conta</a></li>
+                <li><a href="#contato">Contato</a></li>
+            </ul>
+            <div class="hamburger">☰</div>
+        </nav>
+    </header>
+
+    <!-- 1. HOME -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>🍽️ Restaurante Delícia</h1>
+            <p>Comida caseira feita com amor desde 2010</p>
+            <div class="hero-buttons">
+                <a href="#cardapio" class="btn-primary">Ver Cardápio</a>
+                <a href="#reservas" class="btn-secondary" onclick="openWhatsApp()">Reservar Mesa</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. CARDÁPIO -->
+    <section id="cardapio" class="cardapio">
+        <h2>🍲 Nosso Cardápio</h2>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="principal">Principais</button>
+            <button class="filter-btn" data-filter="sobremesa">Sobremesas</button>
+            <button class="filter-btn" data-filter="bebida">Bebidas</button>
+        </div>
+        <div class="cardapio-grid">
+            <div class="card-item principal" data-category="principal">
+                <img src="https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?w=300" alt="Filé" onerror="this.src='https://via.placeholder.com/300';">
+                <h3>Filé Mignon ao Molho</h3>
+                <p>Carne suculenta com molho especial</p>
+                <span class="preco">R$ 45,00</span>
+            </div>
+            <div class="card-item sobremesa" data-category="sobremesa">
+                <img src="https://images.pexels.com/photos/2144200/pexels-photo-2144200.jpeg?w=300" alt="Torta" onerror="this.src='https://via.placeholder.com/300';">
+                <h3>Torta de Limão</h3>
+                <p>Cremosa e refrescante</p>
+                <span class="preco">R$ 15,00</span>
+            </div>
+            <div class="card-item bebida" data-category="bebida">
+                <img src="https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg?w=300" alt="Vinho" onerror="this.src='https://via.placeholder.com/300';">
+                <h3>Vinho Tinto Casa</h3>
+                <p>Garrafa 750ml</p>
+                <span class="preco">R$ 35,00</span>
+            </div>
+            <div class="card-item principal" data-category="principal">
+                <img src="https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?w=300" alt="Massa" onerror="this.src='https://via.placeholder.com/300';">
+                <h3>Spaghetti Carbonara</h3>
+                <p>Massa artesanal com molho cremoso</p>
+                <span class="preco">R$ 38,00</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. SOBRE NÓS -->
+    <section id="sobre" class="sobre">
+        <h2>👨‍🍳 Sobre Nós</h2>
+        <div class="sobre-content">
+            <div class="sobre-text">
+                <h3>Nossa História</h3>
+                <p>Fundado em 2010 pela família Silva, o Restaurante Delícia começou como uma pequena cozinha caseira. Hoje, servimos +5.000 clientes felizes por mês!</p>
+                <h3>Missão</h3>
+                <p>Levar o sabor da comida caseira para todas as mesas com ingredientes frescos e receitas tradicionais.</p>
+            </div>
+            <img src="https://images.pexels.com/photos/616401/pexels-photo-616401.jpeg?w=500" alt="Cozinha" class="sobre-img" onerror="this.src='https://via.placeholder.com/500';">
+        </div>
+    </section>
+
+    <!-- 4. GALERIA -->
+    <section id="galeria" class="galeria">
+        <h2>📸 Nossa Galeria</h2>
+        <div class="gallery-grid">
+            <a href="https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?w=1200" data-lightbox="galeria" data-title="Spaghetti">
+                <img src="https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?w=300" alt="Prato" onerror="this.src='https://via.placeholder.com/300';">
+            </a>
+            <a href="https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?w=1200" data-lightbox="galeria" data-title="Filé Mignon">
+                <img src="https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?w=300" alt="Steak" onerror="this.src='https://via.placeholder.com/300';">
+            </a>
+            <a href="https://images.pexels.com/photos/2144200/pexels-photo-2144200.jpeg?w=1200" data-lightbox="galeria" data-title="Torta">
+                <img src="https://images.pexels.com/photos/2144200/pexels-photo-2144200.jpeg?w=300" alt="Sobremesa" onerror="this.src='https://via.placeholder.com/300';">
+            </a>
+            <a href="https://images.pexels.com/photos/3184192/pexels-photo-3184192.jpeg?w=1200" data-lightbox="galeria" data-title="Ambiente">
+                <img src="https://images.pexels.com/photos/3184192/pexels-photo-3184192.jpeg?w=300" alt="Restaurante" onerror="this.src='https://via.placeholder.com/300';">
+            </a>
+        </div>
+    </section>
+
+    <!-- 5. RESERVAS -->
+    <section id="reservas" class="reservas">
+        <h2>📅 Reservas Online</h2>
+        <form id="reservaForm" class="form-reserva">
+            <input type="text" placeholder="Seu Nome" required>
+            <input type="tel" placeholder="WhatsApp (ex: +5511999999999 ou (11) 99999-9999)" 
+                   pattern="\+?\d{10,14}|\(\d{2}\)\s*\d{4,5}-\d{4}" required>
+            <input type="date" required>
+            <input type="number" placeholder="Nº Pessoas" min="1" max="10" required>
+            <button type="submit" class="btn-primary">Confirmar Reserva</button>
+        </form>
+    </section>
+
+    <!-- 6. MESAS -->
+    <section id="mesas" class="mesas">
+        <h2>🪑 Gerenciamento de Mesas</h2>
+        <div class="mesas-grid" id="mesasGrid"></div>
+        <h3>Registrar Pedido</h3>
+        <form id="pedidoForm" class="pedidos-form">
+            <select id="mesaSelect" required>
+                <option value="">Selecione uma Mesa</option>
+            </select>
+            <select id="itemSelect" required>
+                <option value="">Selecione um Item</option>
+                <option value="Filé Mignon ao Molho|45.00">Filé Mignon ao Molho - R$ 45,00</option>
+                <option value="Torta de Limão|15.00">Torta de Limão - R$ 15,00</option>
+                <option value="Vinho Tinto Casa|35.00">Vinho Tinto Casa - R$ 35,00</option>
+                <option value="Spaghetti Carbonara|38.00">Spaghetti Carbonara - R$ 38,00</option>
+            </select>
+            <input type="number" id="quantidade" placeholder="Quantidade" min="1" required>
+            <button type="submit" class="btn-primary">Adicionar Pedido</button>
+        </form>
+    </section>
+
+    <!-- 7. COZINHA -->
+    <section id="cozinha" class="cozinha">
+        <h2>🍳 Tela da Cozinha</h2>
+        <div class="cozinha-grid" id="cozinhaGrid"></div>
+    </section>
+
+    <!-- 8. FECHAMENTO DE CONTA -->
+    <section id="conta" class="conta">
+        <h2>💳 Fechamento de Conta</h2>
+        <select id="contaMesaSelect">
+            <option value="">Selecione uma Mesa</option>
+        </select>
+        <div class="conta-grid" id="contaGrid"></div>
+        <button id="fecharContaBtn" class="btn-primary" style="display: none;">Fechar Conta</button>
+    </section>
+
+    <!-- 9. CONTATO -->
+    <section id="contato" class="contato">
+        <h2>📍 Contato & Localização</h2>
+        <div class="contato-content">
+            <div class="contato-info">
+                <h3>🕒 Horários</h3>
+                <p>Seg-Sex: 11h às 23h<br>Sáb-Dom: 12h às 00h</p>
+                <h3>📞 Contato</h3>
+                <p><strong>Tel:</strong> (11) 99999-9999<br>
+                   <strong>WhatsApp:</strong> <a href="https://wa.me/5511999999999">(11) 99999-9999</a></p>
+                <h3>📍 Endereço</h3>
+                <p>Rua das Flores, 123<br>Centro - São Paulo, SP</p>
+                <div class="social">
+                    <a href="#">📘 Facebook</a> | <a href="#">📷 Instagram</a>
+                </div>
+            </div>
+            <iframe class="mapa" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.177139149528!2d-46.63665968429126!3d-23.561680584678297!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59a6b9b9b9b9%3A0x9b9b9b9b9b9b9b9b!2sRua%20das%20Flores%2C%20123%2C%20S%C3%A3o%20Paulo%2C%20SP!5e0!3m2!1spt-BR!2sbr!4v1634567890123!5m2!1spt-BR!2sbr" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>&copy; 2025 Restaurante Delícia. Feito com ❤️ para você!</p>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <script>
+        // Inicializar Mesas
+        const mesas = [
+            { id: 1, status: 'livre' },
+            { id: 2, status: 'livre' },
+            { id: 3, status: 'livre' },
+            { id: 4, status: 'livre' }
+        ];
+        let pedidos = [];
+
+        // Carregar dados do localStorage
+        if (localStorage.getItem('mesas')) {
+            mesas.splice(0, mesas.length, ...JSON.parse(localStorage.getItem('mesas')));
+        }
+        if (localStorage.getItem('pedidos')) {
+            pedidos = JSON.parse(localStorage.getItem('pedidos'));
+            console.log('Pedidos carregados do localStorage:', pedidos);
+        }
+
+        // Função para salvar no localStorage
+        function salvarDados() {
+            localStorage.setItem('mesas', JSON.stringify(mesas));
+            localStorage.setItem('pedidos', JSON.stringify(pedidos));
+        }
+
+        // Renderizar Mesas
+        function renderMesas() {
+            const mesasGrid = document.getElementById('mesasGrid');
+            mesasGrid.innerHTML = '';
+            mesas.forEach(mesa => {
+                const mesaDiv = document.createElement('div');
+                mesaDiv.className = `mesa-item ${mesa.status}`;
+                mesaDiv.innerHTML = `Mesa ${mesa.id} - ${mesa.status.charAt(0).toUpperCase() + mesa.status.slice(1)}`;
+                mesaDiv.addEventListener('click', () => {
+                    mesa.status = mesa.status === 'livre' ? 'ocupada' : 'livre';
+                    salvarDados();
+                    renderMesas();
+                    atualizarSelectMesas();
+                });
+                mesasGrid.appendChild(mesaDiv);
+            });
+        }
+
+        // Atualizar select de mesas
+        function atualizarSelectMesas() {
+            const mesaSelect = document.getElementById('mesaSelect');
+            const contaMesaSelect = document.getElementById('contaMesaSelect');
+            mesaSelect.innerHTML = '<option value="">Selecione uma Mesa</option>';
+            contaMesaSelect.innerHTML = '<option value="">Selecione uma Mesa</option>';
+            mesas.forEach(mesa => {
+                const option = document.createElement('option');
+                option.value = mesa.id;
+                option.textContent = `Mesa ${mesa.id} (${mesa.status})`;
+                mesaSelect.appendChild(option.cloneNode(true));
+                if (mesa.status === 'ocupada') {
+                    contaMesaSelect.appendChild(option);
+                }
+            });
+        }
+
+        // Renderizar Pedidos na Cozinha
+        function renderCozinha() {
+            console.log('Pedidos:', pedidos);
+            const cozinhaGrid = document.getElementById('cozinhaGrid');
+            cozinhaGrid.innerHTML = '';
+            if (pedidos.length === 0 || pedidos.every(p => p.status === 'concluído')) {
+                cozinhaGrid.innerHTML = '<p>Nenhum pedido pendente ou em preparo.</p>';
+            }
+            pedidos.forEach((pedido, index) => {
+                if (pedido.status !== 'concluído') {
+                    const pedidoDiv = document.createElement('div');
+                    pedidoDiv.className = 'pedido-item';
+                    pedidoDiv.innerHTML = `
+                        <p>Mesa ${pedido.mesa}: ${pedido.item} (x${pedido.quantidade}) - Status: ${pedido.status}</p>
+                        <button class="status-btn" data-index="${index}" data-status="em preparo">Em Preparo</button>
+                        <button class="status-btn" data-index="${index}" data-status="concluído">Concluído</button>
+                    `;
+                    cozinhaGrid.appendChild(pedidoDiv);
+                }
+            });
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = btn.dataset.index;
+                    const status = btn.dataset.status;
+                    pedidos[index].status = status;
+                    salvarDados();
+                    renderCozinha();
+                    renderConta();
+                });
+            });
+        }
+
+        // Renderizar Conta
+        function renderConta() {
+            const contaMesaSelect = document.getElementById('contaMesaSelect');
+            const contaGrid = document.getElementById('contaGrid');
+            const fecharContaBtn = document.getElementById('fecharContaBtn');
+            contaGrid.innerHTML = '';
+            const mesaId = contaMesaSelect.value;
+            if (!mesaId) return;
+            const mesaPedidos = pedidos.filter(p => p.mesa == mesaId && p.status === 'concluído');
+            let total = 0;
+            mesaPedidos.forEach(pedido => {
+                const pedidoDiv = document.createElement('div');
+                pedidoDiv.className = 'conta-item';
+                const subtotal = pedido.quantidade * pedido.preco;
+                total += subtotal;
+                pedidoDiv.innerHTML = `<p>${pedido.item} (x${pedido.quantidade}) - R$ ${subtotal.toFixed(2)}</p>`;
+                contaGrid.appendChild(pedidoDiv);
+            });
+            if (mesaPedidos.length > 0) {
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'conta-item';
+                totalDiv.innerHTML = `<p><strong>Total: R$ ${total.toFixed(2)}</strong></p>`;
+                contaGrid.appendChild(totalDiv);
+                fecharContaBtn.style.display = 'block';
+            } else {
+                fecharContaBtn.style.display = 'none';
+            }
+        }
+
+        // WhatsApp Reserva
+        function openWhatsApp() {
+            const nome = document.querySelector('#reservaForm input[type="text"]').value || 'Cliente';
+            let tel = document.querySelector('#reservaForm input[type="tel"]').value || '5511999999999';
+            const data = document.querySelector('#reservaForm input[type="date"]').value || '';
+            const pessoas = document.querySelector('#reservaForm input[type="number"]').value || '1';
+            tel = tel.replace(/[\(\)\-\s]/g, '');
+            if (tel && !tel.startsWith('+')) {
+                tel = '+55' + tel;
+            }
+            const mensagem = `Olá! Sou ${nome} e quero reservar para ${data} para ${pessoas} pessoas! 📅`;
+            window.open(`https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`, '_blank');
+        }
+
+        // Validação personalizada para o telefone
+        document.querySelector('#reservaForm input[type="tel"]').addEventListener('invalid', (e) => {
+            e.target.setCustomValidity('Por favor, insira um número de telefone válido (ex.: +5511999999999 ou (11) 99999-9999)');
+        });
+        document.querySelector('#reservaForm input[type="tel"]').addEventListener('input', (e) => {
+            e.target.setCustomValidity('');
+        });
+
+        // Filtro Cardápio
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelector('.filter-btn.active').classList.remove('active');
+                btn.classList.add('active');
+                const filter = btn.dataset.filter;
+                document.querySelectorAll('.card-item').forEach(item => {
+                    if (filter === 'all' || item.dataset.category === filter) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Form Reserva
+        document.getElementById('reservaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            openWhatsApp();
+            alert('✅ Reserva enviada para WhatsApp! Responderemos em breve.');
+        });
+
+        // Form Pedido
+        document.getElementById('pedidoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mesaId = document.getElementById('mesaSelect').value;
+            const [item, preco] = document.getElementById('itemSelect').value.split('|');
+            const quantidade = document.getElementById('quantidade').value;
+            if (!mesaId || !item || !quantidade) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+            if (mesas.find(m => m.id == mesaId).status === 'livre') {
+                alert('Selecione uma mesa ocupada!');
+                return;
+            }
+            pedidos.push({
+                mesa: mesaId,
+                item,
+                preco: parseFloat(preco),
+                quantidade: parseInt(quantidade),
+                status: 'pendente'
+            });
+            console.log('Novo pedido:', pedidos);
+            salvarDados();
+            renderCozinha();
+            renderConta();
+            alert('✅ Pedido registrado!');
+            e.target.reset();
+        });
+
+        // Fechar Conta
+        document.getElementById('fecharContaBtn').addEventListener('click', () => {
+            const mesaId = document.getElementById('contaMesaSelect').value;
+            pedidos = pedidos.filter(p => p.mesa != mesaId || p.status !== 'concluído');
+            const mesa = mesas.find(m => m.id == mesaId);
+            if (mesa) mesa.status = 'livre';
+            salvarDados();
+            renderMesas();
+            renderCozinha();
+            renderConta();
+            alert('✅ Conta fechada! Mesa liberada.');
+        });
+
+        // Atualizar Conta ao Selecionar Mesa
+        document.getElementById('contaMesaSelect').addEventListener('change', renderConta);
+
+        // Scroll Suave
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ 
+                    behavior: 'smooth' 
+                });
+            });
+        });
+
+        // Menu Hambúrguer
+        document.querySelector('.hamburger').addEventListener('click', () => {
+            document.querySelector('.nav-menu').classList.toggle('active');
+        });
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMesas();
+            atualizarSelectMesas();
+            renderCozinha();
+            renderConta();
+        });
+    </script>
+</body>
+</html>
