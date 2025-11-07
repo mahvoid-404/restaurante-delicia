@@ -3,6 +3,13 @@
 Restaurante Delícia é um site interativo e moderno para gerenciamento de um restaurante fictício.
 Ele inclui cardápio digital, reservas online, controle de mesas, pedidos para cozinha e fechamento de contas — tudo feito com HTML, CSS e JavaScript puro.
 
+
+
+## 🌐 Acesse o Site Online
+
+👉 [Clique aqui para acessar o Restaurante Delícia](https://mahvoid-404.github.io/restaurante-delicia/)  
+
+
 ## Funcionalidades Principais
 
 ## Página Inicial (Home)
