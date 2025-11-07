@@ -228,7 +228,7 @@
     <!-- HEADER FIXO -->
     <header class="header-fixed">
         <nav class="navbar">
-            <h1 class="logo">🍽️ Restaurante Delícia</h1>
+            <h1 class="logo">🍽 Restaurante Delícia</h1>
             <ul class="nav-menu">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#cardapio">Cardápio</a></li>
@@ -247,7 +247,7 @@
     <!-- 1. HOME -->
     <section id="home" class="hero">
         <div class="hero-content">
-            <h1>🍽️ Restaurante Delícia</h1>
+            <h1>🍽 Restaurante Delícia</h1>
             <p>Comida caseira feita com amor desde 2010</p>
             <div class="hero-buttons">
                 <a href="#cardapio" class="btn-primary">Ver Cardápio</a>
@@ -398,7 +398,7 @@
 
     <!-- FOOTER -->
     <footer class="footer">
-        <p>&copy; 2025 Restaurante Delícia. Feito com ❤️ para você!</p>
+        <p>&copy; 2025 Restaurante Delícia. Feito com ❤ para você!</p>
     </footer>
 
     <!-- SCRIPTS -->
@@ -434,8 +434,8 @@
             mesasGrid.innerHTML = '';
             mesas.forEach(mesa => {
                 const mesaDiv = document.createElement('div');
-                mesaDiv.className = `mesa-item ${mesa.status}`;
-                mesaDiv.innerHTML = `Mesa ${mesa.id} - ${mesa.status.charAt(0).toUpperCase() + mesa.status.slice(1)}`;
+                mesaDiv.className = mesa-item ${mesa.status};
+                mesaDiv.innerHTML = Mesa ${mesa.id} - ${mesa.status.charAt(0).toUpperCase() + mesa.status.slice(1)};
                 mesaDiv.addEventListener('click', () => {
                     mesa.status = mesa.status === 'livre' ? 'ocupada' : 'livre';
                     salvarDados();
@@ -455,7 +455,7 @@
             mesas.forEach(mesa => {
                 const option = document.createElement('option');
                 option.value = mesa.id;
-                option.textContent = `Mesa ${mesa.id} (${mesa.status})`;
+                option.textContent = Mesa ${mesa.id} (${mesa.status});
                 mesaSelect.appendChild(option.cloneNode(true));
                 if (mesa.status === 'ocupada') {
                     contaMesaSelect.appendChild(option);
@@ -510,13 +510,13 @@
                 pedidoDiv.className = 'conta-item';
                 const subtotal = pedido.quantidade * pedido.preco;
                 total += subtotal;
-                pedidoDiv.innerHTML = `<p>${pedido.item} (x${pedido.quantidade}) - R$ ${subtotal.toFixed(2)}</p>`;
+                pedidoDiv.innerHTML = <p>${pedido.item} (x${pedido.quantidade}) - R$ ${subtotal.toFixed(2)}</p>;
                 contaGrid.appendChild(pedidoDiv);
             });
             if (mesaPedidos.length > 0) {
                 const totalDiv = document.createElement('div');
                 totalDiv.className = 'conta-item';
-                totalDiv.innerHTML = `<p><strong>Total: R$ ${total.toFixed(2)}</strong></p>`;
+                totalDiv.innerHTML = <p><strong>Total: R$ ${total.toFixed(2)}</strong></p>;
                 contaGrid.appendChild(totalDiv);
                 fecharContaBtn.style.display = 'block';
             } else {
@@ -534,8 +534,8 @@
             if (tel && !tel.startsWith('+')) {
                 tel = '+55' + tel;
             }
-            const mensagem = `Olá! Sou ${nome} e quero reservar para ${data} para ${pessoas} pessoas! 📅`;
-            window.open(`https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`, '_blank');
+            const mensagem = Olá! Sou ${nome} e quero reservar para ${data} para ${pessoas} pessoas! 📅;
+            window.open(https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}, '_blank');
         }
 
         // Validação personalizada para o telefone
